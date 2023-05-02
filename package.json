@@ -13,7 +13,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "dotenv": "^16.0.3",
     "langchain": "^0.0.67",
     "lodash": "^4.17.21",
     "openai": "^3.2.1"

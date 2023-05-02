@@ -1,5 +1,4 @@
 import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
-import { config as dotenvConfig } from 'dotenv';
 // import {} from 'openai';
 // import { nanoid } from 'nanoid';
 import { IDocument } from './types/IDocument';
@@ -9,8 +8,6 @@ import { calcVectorMagnitude, getCosineSimilarityScore } from './utils/cosineSim
 import { filterDocuments } from './utils/filterDocuments';
 import { getObjectSizeInMB } from './utils/getObjectSizeInMB';
 import debounce from 'lodash/debounce';
-
-dotenvConfig();
 
 export class VectorStorage {
   private readonly storeKey = 'VECTOR_DB';
