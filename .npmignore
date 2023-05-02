@@ -1,0 +1,36 @@
+# .npmignore
+
+# Ignore the node_modules directory
+node_modules/
+
+# Ignore the build and dist directories
+build/
+dist/
+
+# Ignore any .log files
+*.log
+
+# Ignore any .env files
+*.env
+
+# Ignore any .DS_Store files (macOS metadata)
+.DS_Store
+
+# Ignore the .git directory
+.git/
+
+# Ignore the .gitignore file
+.gitignore
+
+# Ignore any editor configuration files
+.editorconfig
+.vscode/
+
+# Ignore any test files and directories
+test/
+__tests__/
+
+# Ignore any documentation files
+docs/
+README.md
+LICENSE
