@@ -37,7 +37,9 @@ export class VectorStorage {
       vecMag: 0,
       vector: [], // Added hit counter
     };
+    console.log(doc);
     const docs = await this.addDocuments([doc]);
+    console.log(docs[0]);
     return docs[0];
   }
 
@@ -56,7 +58,6 @@ export class VectorStorage {
     if (newDocuments.length === 0) {
       return [];
     }
-
     const newVectors = await this.embedTexts(newDocuments.map((doc) => doc.text));
     // Assign vectors and precompute vector magnitudes for new documents
     newDocuments.forEach((doc, index) => {
