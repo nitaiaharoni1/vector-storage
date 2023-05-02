@@ -1,0 +1,116 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    "build/",
+    "coverage/",
+    "public/"
+  ],
+  "extends": [
+    "standard-with-typescript",
+    "eslint:all",
+    "prettier",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript"
+  ],
+  "plugins": [
+    "prettier",
+    "sort-keys-fix",
+    "sort-imports-es6-autofix"
+  ],
+  "rules": {
+    "line-comment-position": "off",
+    "import/no-unresolved": "off",
+    "no-return-await": "off",
+    "@typescript-eslint/restrict-template-expressions": "off",
+    "no-continue": "off",
+    "max-params": [
+      "error",
+      4
+    ],
+    "no-underscore-dangle": "off",
+    "init-declarations": "off",
+    "sort-keys-fix/sort-keys-fix": "error",
+    "no-inline-comments": "off",
+    "no-console": [
+      "error",
+      {
+        "allow": [
+          "debug",
+          "warn",
+          "error"
+        ]
+      }
+    ],
+    "prefer-named-capture-group": "off",
+    "@typescript-eslint/no-misused-promises": "off",
+    "sort-imports": "off",
+    "no-magic-numbers": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "no-ternary": "off",
+    "max-statements": [
+      "error",
+      50
+    ],
+    "id-length": "off",
+    "sort-imports-es6-autofix/sort-imports-es6": [
+      2,
+      {
+        "ignoreCase": false,
+        "ignoreMemberSort": false,
+        "memberSyntaxSortOrder": [
+          "none",
+          "all",
+          "multiple",
+          "single"
+        ]
+      }
+    ],
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/consistent-type-imports": "off",
+    "class-methods-use-this": "off",
+    "@typescript-eslint/no-floating-promises": "off",
+    "@typescript-eslint/strict-boolean-expressions": "off",
+    "@typescript-eslint/restrict-plus-operands": "off",
+    "multiline-comment-style": "off",
+    "require-jsdoc": "off",
+    "no-warning-comments": "off",
+    "capitalized-comments": "off",
+    "func-style": "off",
+    "max-lines-per-function": [
+      "error",
+      {
+        "max": 100,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
+    ],
+    "prettier/prettier": [
+      "error",
+      {
+        "singleQuote": true,
+        "printWidth": 180,
+        "trailingComma": "all",
+        "bracketSpacing": true,
+        "bracketSameLine": true,
+        "quoteProps": "as-needed",
+        "jsxSingleQuote": true,
+        "jsxBracketSameLine": false,
+        "jsxBracketSpacing": true
+      }
+    ],
+    "no-use-before-define": "off"
+  }
+}
