@@ -1,12 +1,11 @@
-import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
-// import {} from 'openai';
-// import { nanoid } from 'nanoid';
+import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
 import { IDocument } from './types/IDocument';
 import { ISimilaritySearchParams } from './types/ISimilaritySearchParams';
 import { IVectorStorageOptions } from './types/IVectorStorageOptions';
 import { calcVectorMagnitude, getCosineSimilarityScore } from './utils/cosineSimilarity';
 import { filterDocuments } from './utils/filterDocuments';
 import { getObjectSizeInMB } from './utils/getObjectSizeInMB';
+import axios from 'axios';
 import debounce from 'lodash/debounce';
 
 export class VectorStorage {
@@ -14,65 +13,83 @@ export class VectorStorage {
   private readonly maxSizeInMB = 4.8; // 4.8 MB
   private readonly debounceTime = 1000; // 1 second
   private documents: IDocument[] = [];
-  private readonly embeddings: OpenAIEmbeddings;
+  private readonly openaiApiKey: string;
   private readonly debouncedSaveToLocalStorage = debounce(() => {
     this.saveToLocalStorage();
   }, this.debounceTime);
 
   constructor(options: IVectorStorageOptions) {
     this.loadFromLocalStorage();
-
-    // Use the provided API key, or fall back to the environment variable
     const { openAIApiKey } = options;
     if (!openAIApiKey) {
       throw new Error('OpenAI API key is required.');
     }
-    this.embeddings = new OpenAIEmbeddings({ openAIApiKey });
+    this.openaiApiKey = openAIApiKey;
   }
 
-  async addText(text: string, metadata: object): Promise<void> {
+  async addText(text: string, metadata: object): Promise<IDocument> {
     // Create a document from the text and metadata
     const doc: IDocument = {
       hits: 0,
-
       metadata,
-
-      // id: nanoid(),
       text,
-
-      // Placeholder for the vector magnitude
       timestamp: Date.now(),
-
-      // Placeholder for the vector
       vecMag: 0,
-
       vector: [], // Added hit counter
     };
-    await this.addDocuments([doc]);
+    const docs = await this.addDocuments([doc]);
+    return docs[0];
   }
 
-  async addTexts(texts: string[], metadatas: object[]): Promise<void> {
+  async addTexts(texts: string[], metadatas: object[]): Promise<IDocument[]> {
     if (texts.length !== metadatas.length) {
       throw new Error('The lengths of texts and metadata arrays must match.');
     }
-    const promises = texts.map(async (text, index) => {
-      await this.addText(text, metadatas[index]);
-    });
-    await Promise.all(promises);
+    const promises = texts.map(async (text, index) => await this.addText(text, metadatas[index]));
+    return await Promise.all(promises);
   }
 
-  async addDocuments(documents: IDocument[]): Promise<void> {
-    const newVectors = await this.embeddings.embedDocuments(documents.map((doc) => doc.text));
-    // Assign vectors and precompute vector magnitudes for documents
-    documents.forEach((doc, index) => {
+  async addDocuments(documents: IDocument[]): Promise<IDocument[]> {
+    // filter out already existing documents
+    const newDocuments = documents.filter((doc) => !this.documents.some((d) => d.text === doc.text));
+    // If there are no new documents, return an empty array
+    if (newDocuments.length === 0) {
+      return [];
+    }
+
+    const newVectors = await this.embedTexts(newDocuments.map((doc) => doc.text));
+    // Assign vectors and precompute vector magnitudes for new documents
+    newDocuments.forEach((doc, index) => {
       doc.vector = newVectors[index];
       doc.vecMag = calcVectorMagnitude(doc);
     });
-    // Add documents to the store
-    this.documents.push(...documents);
+    // Add new documents to the store
+    this.documents.push(...newDocuments);
     this.trimDocuments();
     // Save to local storage
     this.debouncedSaveToLocalStorage();
+    return newDocuments;
+  }
+
+  private async embedTexts(texts: string[]): Promise<number[][]> {
+    const response = await axios.post<ICreateEmbeddingResponse>(
+      'https://api.openai.com/v1/embeddings',
+      {
+        input: texts,
+        model: 'text-embedding-ada-002',
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${this.openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+    return response.data.data.map((item) => item.embedding);
+  }
+
+  private async embedText(query: string): Promise<number[]> {
+    return (await this.embedTexts([query]))[0];
   }
 
   async similaritySearch(params: ISimilaritySearchParams): Promise<IDocument[] | Array<[IDocument, number]>> {
@@ -96,7 +113,7 @@ export class VectorStorage {
   }
 
   private async calculateQueryVectorAndMagnitude(query: string | number[]): Promise<{ queryVector: number[]; queryMagnitude: number }> {
-    const queryVector = typeof query === 'string' ? await this.embeddings.embedQuery(query) : query;
+    const queryVector = typeof query === 'string' ? await this.embedText(query) : query;
     const queryMagnitude = Math.sqrt(queryVector.reduce((sum, val) => sum + val * val, 0));
     return { queryMagnitude, queryVector };
   }
@@ -111,7 +128,7 @@ export class VectorStorage {
 
   private updateHitCounters(results: IDocument[] | Array<[IDocument, number]>): void {
     results.forEach((doc) => {
-      if (doc instanceof Array) {
+      if (Array.isArray(doc)) {
         doc[0].hits += 1;
       } else {
         doc.hits += 1;
