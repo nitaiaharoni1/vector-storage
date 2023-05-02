@@ -1,3 +1,3 @@
 export interface IVectorStorageOptions {
-  openAIApiKey?: string;
+  openAIApiKey: string;
 }
