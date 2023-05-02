@@ -8,7 +8,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "bump": "npm version patch",
-    "publish": "npm publish"
+    "publish": "npm publish",
+    "bumpublish": "npm version patch && npm publish"
   },
   "author": "",
   "license": "ISC",
