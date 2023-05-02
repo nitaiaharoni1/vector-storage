@@ -26,7 +26,7 @@ export class VectorStorage {
     this.loadFromLocalStorage();
 
     // Use the provided API key, or fall back to the environment variable
-    const openAIApiKey = options?.openAIApiKey ?? process.env.OPENAI_API_KEY;
+    const openAIApiKey = options?.openAIApiKey ?? process?.env?.OPENAI_API_KEY;
     if (!openAIApiKey) {
       throw new Error('OpenAI API key is required.');
     }
