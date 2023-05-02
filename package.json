@@ -1,6 +1,6 @@
 {
   "name": "vector-storage",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "main": "dist/VectorStorage.js",
   "types": "dist/VectorStorage.d.ts",
@@ -8,8 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "bump": "npm version patch",
-    "publish": "npm publish",
-    "bump-publish": "npm run bump && npm run publish"
+    "publish": "npm publish"
   },
   "author": "",
   "license": "ISC",
