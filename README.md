@@ -42,7 +42,7 @@ console.log(results);
 
 The main class for managing document vectors in local storage.
 
-#### `constructor(options: ILocalStorageVectorStoreOptions)`
+#### `constructor(options: IVectorStorageOptions)`
 
 Creates a new instance of `VectorStorage`.
 

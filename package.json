@@ -6,7 +6,10 @@
   "types": "dist/VectorStorage.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "build": "tsc",
+    "bump": "npm version patch",
+    "publish": "npm publish",
+    "bump-publish": "npm run bump && npm run publish"
   },
   "author": "",
   "license": "ISC",

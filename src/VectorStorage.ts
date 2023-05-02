@@ -3,8 +3,8 @@ import { config as dotenvConfig } from 'dotenv';
 // import {} from 'openai';
 // import { nanoid } from 'nanoid';
 import { IDocument } from './types/IDocument';
-import { ILocalStorageVectorStoreOptions } from './types/ILocalStorageVectorStoreOptions';
 import { ISimilaritySearchParams } from './types/ISimilaritySearchParams';
+import { IVectorStorageOptions } from './types/IVectorStorageOptions';
 import { calcVectorMagnitude, getCosineSimilarityScore } from './utils/cosineSimilarity';
 import { filterDocuments } from './utils/filterDocuments';
 import { getObjectSizeInMB } from './utils/getObjectSizeInMB';
@@ -22,7 +22,7 @@ export class VectorStorage {
     this.saveToLocalStorage();
   }, this.debounceTime);
 
-  constructor(options?: ILocalStorageVectorStoreOptions) {
+  constructor(options?: IVectorStorageOptions) {
     this.loadFromLocalStorage();
 
     // Use the provided API key, or fall back to the environment variable
