@@ -1,9 +1,8 @@
 export interface IDocument {
-  vector: number[];
-  // id: string;
-  text: string;
-  vecMag: number;
-  metadata: Record<string, any>;
-  timestamp: number;
-  hits: number;
+  h?: number; // hits (optional, omit if 0)
+  md: object; // metadata
+  t: string; // text
+  ts: number; // timestamp
+  vm: number; // vecMag
+  v: number[]; // vector
 }

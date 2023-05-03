@@ -4,5 +4,4 @@ export interface ISimilaritySearchParams {
   query: string | number[];
   k?: number;
   filterOptions?: IFilterOptions;
-  withScore?: boolean;
 }

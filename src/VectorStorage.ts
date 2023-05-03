@@ -46,12 +46,11 @@ export class VectorStorage {
   public async addText(text: string, metadata: object): Promise<IDocument> {
     // Create a document from the text and metadata
     const doc: IDocument = {
-      hits: 0,
-      metadata,
-      text,
-      timestamp: Date.now(),
-      vecMag: 0,
-      vector: [], // Added hit counter
+      md: metadata, // metadata
+      t: text, // text
+      ts: Date.now(), // timestamp
+      v: [], // vector
+      vm: 0, // vecMag
     };
     const docs = await this.addDocuments([doc]);
     return docs[0];
@@ -67,16 +66,16 @@ export class VectorStorage {
 
   public async addDocuments(documents: IDocument[]): Promise<IDocument[]> {
     // filter out already existing documents
-    const newDocuments = documents.filter((doc) => !this.documents.some((d) => d.text === doc.text));
+    const newDocuments = documents.filter((doc) => !this.documents.some((d) => d.t === doc.t));
     // If there are no new documents, return an empty array
     if (newDocuments.length === 0) {
       return [];
     }
-    const newVectors = await this.embedTexts(newDocuments.map((doc) => doc.text));
+    const newVectors = await this.embedTexts(newDocuments.map((doc) => doc.t));
     // Assign vectors and precompute vector magnitudes for new documents
     newDocuments.forEach((doc, index) => {
-      doc.vector = newVectors[index];
-      doc.vecMag = calcVectorMagnitude(doc);
+      doc.v = newVectors[index];
+      doc.vm = calcVectorMagnitude(doc);
     });
     // Add new documents to the store
     this.documents.push(...newDocuments);
@@ -107,8 +106,8 @@ export class VectorStorage {
     return (await this.embedTexts([query]))[0];
   }
 
-  async similaritySearch(params: ISimilaritySearchParams): Promise<IDocument[] | Array<[IDocument, number]>> {
-    const { query, k = 4, filterOptions, withScore = false } = params;
+  async similaritySearch(params: ISimilaritySearchParams): Promise<IDocument[]> {
+    const { query, k = 4, filterOptions } = params;
     // Calculate the query vector and its magnitude
     const { queryVector, queryMagnitude } = await this.calculateQueryVectorAndMagnitude(query);
     // Filter documents based on filter options
@@ -116,8 +115,8 @@ export class VectorStorage {
     // Calculate similarity scores for the filtered documents
     const scoresPairs: Array<[IDocument, number]> = this.calculateSimilarityScores(filteredDocuments, queryVector, queryMagnitude);
     const sortedPairs = scoresPairs.sort((a, b) => b[1] - a[1]);
-    // Return the top k documents with or without their similarity scores based on the withScore parameter
-    const results = withScore ? sortedPairs.slice(0, k) : sortedPairs.slice(0, k).map((pair) => pair[0]);
+    // Return the top k documents without their similarity scores
+    const results = sortedPairs.slice(0, k).map((pair) => pair[0]);
     // Update hit counters for the top k documents
     this.updateHitCounters(results);
     if (results.length > 0) {
@@ -135,19 +134,15 @@ export class VectorStorage {
 
   private calculateSimilarityScores(filteredDocuments: IDocument[], queryVector: number[], queryMagnitude: number): Array<[IDocument, number]> {
     return filteredDocuments.map((doc) => {
-      const dotProduct = doc.vector.reduce((sum, val, i) => sum + val * queryVector[i], 0);
-      const score = getCosineSimilarityScore(dotProduct, doc.vecMag, queryMagnitude);
+      const dotProduct = doc.v.reduce((sum, val, i) => sum + val * queryVector[i], 0);
+      const score = getCosineSimilarityScore(dotProduct, doc.vm, queryMagnitude);
       return [doc, score];
     });
   }
 
-  private updateHitCounters(results: IDocument[] | Array<[IDocument, number]>): void {
+  private updateHitCounters(results: IDocument[]): void {
     results.forEach((doc) => {
-      if (Array.isArray(doc)) {
-        doc[0].hits += 1;
-      } else {
-        doc.hits += 1;
-      }
+      doc.h = (doc.h ?? 0) + 1; // Update hit counter
     });
   }
 
@@ -167,7 +162,7 @@ export class VectorStorage {
   private removeDocsLRU(): void {
     if (getObjectSizeInMB(this.documents) > this.maxSizeInMB) {
       // Sort documents by hit counter (ascending) and then by timestamp (ascending)
-      this.documents.sort((a, b) => a.hits - b.hits || a.timestamp - b.timestamp);
+      this.documents.sort((a, b) => (a.h ?? 0) - (b.h ?? 0) || a.ts - b.ts);
 
       // Remove documents until the size is below the limit
       while (getObjectSizeInMB(this.documents) > this.maxSizeInMB) {

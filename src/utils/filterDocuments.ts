@@ -17,14 +17,15 @@ export function filterDocuments(documents: IDocument[], filterOptions?: IFilterO
 function matchesCriteria(document: IDocument, criteria: IFilterCriteria): boolean {
   if (criteria.metadata) {
     for (const key in criteria.metadata) {
-      if (document.metadata[key] !== criteria.metadata[key]) {
+      // @ts-expect-error
+      if (document.md[key] !== criteria.metadata[key]) {
         return false;
       }
     }
   }
   if (criteria.text) {
     const texts = Array.isArray(criteria.text) ? criteria.text : [criteria.text];
-    if (!texts.includes(document.text)) {
+    if (!texts.includes(document.t)) {
       return false;
     }
   }

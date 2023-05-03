@@ -1,7 +1,7 @@
 import { IDocument } from '../types/IDocument';
 
 export function calcVectorMagnitude(doc: IDocument): number {
-  return Math.sqrt(doc.vector.reduce((sum, val) => sum + val * val, 0));
+  return Math.sqrt(doc.v.reduce((sum, val) => sum + val * val, 0));
 }
 
 export function getCosineSimilarityScore(dotProduct: number, magnitudeA: number, magnitudeB: number): number {
