@@ -1,7 +1,7 @@
-import { IDocument } from '../types/IDocument';
-import { IFilterCriteria, IFilterOptions } from '../types/IFilter';
+import { IVectorStorageDocument } from '../types/IVectorStorageDocument';
+import { IVectorStorageFilterCriteria, IVectorStorageFilterOptions } from '../types/IVectorStorageFilterOptions';
 
-export function filterDocuments(documents: IDocument[], filterOptions?: IFilterOptions): IDocument[] {
+export function filterDocuments(documents: IVectorStorageDocument[], filterOptions?: IVectorStorageFilterOptions): IVectorStorageDocument[] {
   let filteredDocuments = documents;
   if (filterOptions) {
     if (filterOptions.include) {
@@ -14,7 +14,7 @@ export function filterDocuments(documents: IDocument[], filterOptions?: IFilterO
   return filteredDocuments;
 }
 
-function matchesCriteria(document: IDocument, criteria: IFilterCriteria): boolean {
+function matchesCriteria(document: IVectorStorageDocument, criteria: IVectorStorageFilterCriteria): boolean {
   if (criteria.metadata) {
     for (const key in criteria.metadata) {
       // @ts-expect-error

@@ -83,27 +83,27 @@ interface IVectorStorageOptions {
 }
 ```
 
-#### addText(text: string, metadata: object): Promise<IDocument>
+#### addText(text: string, metadata: object): Promise<IVectorStorageDocument>
 
 Adds a text document to the store and returns the created document.
 
 - **text**: The text content of the document.
 - **metadata**: An object containing metadata associated with the document.
 
-#### addTexts(texts: string[], metadatas: object[]): Promise<IDocument[]>
+#### addTexts(texts: string[], metadatas: object[]): Promise<IVectorStorageDocument[]>
 
 Adds multiple text documents to the store and returns an array of created documents.
 
 - **texts**: An array of text contents for the documents.
 - **metadatas**: An array of metadata objects associated with the documents.
 
-#### addDocuments(documents: IDocument[]): Promise<IDocument[]>
+#### addDocuments(documents: IVectorStorageDocument[]): Promise<IVectorStorageDocument[]>
 
 Adds multiple documents to the store and returns an array of created documents.
 
 - **documents**: An array of document objects, each containing text, metadata, and other properties.
 
-#### similaritySearch(params: ISimilaritySearchParams): Promise<IDocument[]>
+#### similaritySearch(params: ISimilaritySearchParams): Promise<IVectorStorageDocument[]>
 
 Performs a similarity search on the stored documents and returns an array of matching documents.
 
@@ -113,13 +113,13 @@ Performs a similarity search on the stored documents and returns an array of mat
 - **k** (optional): The number of top results to return (default: 4).
 - **filterOptions** (optional): An object specifying filter criteria for the search.
 
-#### IDocument Interface
+#### IVectorStorageDocument Interface
 
-The IDocument interface represents a document object stored in the vector database. It contains the following
+The IVectorStorageDocument interface represents a document object stored in the vector database. It contains the following
 properties:
 
 ```typescript
-interface IDocument {
+interface IVectorStorageDocument {
   h?: number; // The number of hits (accesses) for the document. Omit if the value is 0.
   md: object; // The metadata associated with the document for filtering.
   t: string; // The text content of the document.

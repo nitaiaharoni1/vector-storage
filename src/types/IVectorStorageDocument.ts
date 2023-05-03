@@ -1,4 +1,4 @@
-export interface IDocument {
+export interface IVectorStorageDocument {
   h?: number; // hits (optional, omit if 0)
   md: object; // metadata
   t: string; // text

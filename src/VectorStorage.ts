@@ -1,7 +1,7 @@
 import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
-import { IDocument } from './types/IDocument';
-import { ISimilaritySearchParams } from './types/ISimilaritySearchParams';
+import { IVectorStorageDocument } from './types/IVectorStorageDocument';
 import { IVectorStorageOptions } from './types/IVectorStorageOptions';
+import { IVectorStorageSimilaritySearchParams } from './types/IVectorStorageSimilaritySearchParams';
 import { calcVectorMagnitude, getCosineSimilarityScore } from './utils/cosineSimilarity';
 import { constants } from './constants';
 import { filterDocuments } from './utils/filterDocuments';
@@ -10,7 +10,7 @@ import axios from 'axios';
 import debounce from 'lodash/debounce';
 
 export class VectorStorage {
-  private documents: IDocument[] = [];
+  private documents: IVectorStorageDocument[] = [];
   private readonly storeKey: string;
   private readonly maxSizeInMB: number;
   private readonly debounceTime: number;
@@ -43,9 +43,9 @@ export class VectorStorage {
     }, this.debounceTime);
   }
 
-  public async addText(text: string, metadata: object): Promise<IDocument> {
+  public async addText(text: string, metadata: object): Promise<IVectorStorageDocument> {
     // Create a document from the text and metadata
-    const doc: IDocument = {
+    const doc: IVectorStorageDocument = {
       md: metadata, // metadata
       t: text, // text
       ts: Date.now(), // timestamp
@@ -56,7 +56,7 @@ export class VectorStorage {
     return docs[0];
   }
 
-  public async addTexts(texts: string[], metadatas: object[]): Promise<IDocument[]> {
+  public async addTexts(texts: string[], metadatas: object[]): Promise<IVectorStorageDocument[]> {
     if (texts.length !== metadatas.length) {
       throw new Error('The lengths of texts and metadata arrays must match.');
     }
@@ -64,7 +64,7 @@ export class VectorStorage {
     return await Promise.all(promises);
   }
 
-  public async addDocuments(documents: IDocument[]): Promise<IDocument[]> {
+  public async addDocuments(documents: IVectorStorageDocument[]): Promise<IVectorStorageDocument[]> {
     // filter out already existing documents
     const newDocuments = documents.filter((doc) => !this.documents.some((d) => d.t === doc.t));
     // If there are no new documents, return an empty array
@@ -106,14 +106,14 @@ export class VectorStorage {
     return (await this.embedTexts([query]))[0];
   }
 
-  async similaritySearch(params: ISimilaritySearchParams): Promise<IDocument[]> {
+  async similaritySearch(params: IVectorStorageSimilaritySearchParams): Promise<IVectorStorageDocument[]> {
     const { query, k = 4, filterOptions } = params;
     // Calculate the query vector and its magnitude
     const { queryVector, queryMagnitude } = await this.calculateQueryVectorAndMagnitude(query);
     // Filter documents based on filter options
     const filteredDocuments = filterDocuments(this.documents, filterOptions);
     // Calculate similarity scores for the filtered documents
-    const scoresPairs: Array<[IDocument, number]> = this.calculateSimilarityScores(filteredDocuments, queryVector, queryMagnitude);
+    const scoresPairs: Array<[IVectorStorageDocument, number]> = this.calculateSimilarityScores(filteredDocuments, queryVector, queryMagnitude);
     const sortedPairs = scoresPairs.sort((a, b) => b[1] - a[1]);
     // Return the top k documents without their similarity scores
     const results = sortedPairs.slice(0, k).map((pair) => pair[0]);
@@ -132,7 +132,7 @@ export class VectorStorage {
     return { queryMagnitude, queryVector };
   }
 
-  private calculateSimilarityScores(filteredDocuments: IDocument[], queryVector: number[], queryMagnitude: number): Array<[IDocument, number]> {
+  private calculateSimilarityScores(filteredDocuments: IVectorStorageDocument[], queryVector: number[], queryMagnitude: number): Array<[IVectorStorageDocument, number]> {
     return filteredDocuments.map((doc) => {
       const dotProduct = doc.v.reduce((sum, val, i) => sum + val * queryVector[i], 0);
       const score = getCosineSimilarityScore(dotProduct, doc.vm, queryMagnitude);
@@ -140,7 +140,7 @@ export class VectorStorage {
     });
   }
 
-  private updateHitCounters(results: IDocument[]): void {
+  private updateHitCounters(results: IVectorStorageDocument[]): void {
     results.forEach((doc) => {
       doc.h = (doc.h ?? 0) + 1; // Update hit counter
     });

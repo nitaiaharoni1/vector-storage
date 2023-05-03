@@ -1,6 +1,6 @@
-import { IDocument } from '../types/IDocument';
+import { IVectorStorageDocument } from '../types/IVectorStorageDocument';
 
-export function calcVectorMagnitude(doc: IDocument): number {
+export function calcVectorMagnitude(doc: IVectorStorageDocument): number {
   return Math.sqrt(doc.v.reduce((sum, val) => sum + val * val, 0));
 }
 
