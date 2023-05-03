@@ -112,7 +112,7 @@ Performs a similarity search on the stored documents and returns an array of mat
 - **k** (optional): The number of top results to return (default: 4).
 - **filterOptions** (optional): An object specifying filter criteria for the search.
 
-### IDocument Interface
+#### IDocument Interface
 
 The IDocument interface represents a document object stored in the vector database. It contains the following
 properties:
