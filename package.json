@@ -4,6 +4,23 @@
   "description": "A lightweight and efficient vector database for storing and searching text embeddings in the browser's local storage. The package uses OpenAI's API to generate embeddings for text documents and provides functionality for similarity search, filtering, and automatic management of local storage space. It is designed for use cases where client-side storage and retrieval of text embeddings are needed.",
   "main": "dist/VectorStorage.js",
   "types": "dist/VectorStorage.d.ts",
+  "keywords": [
+    "vector",
+    "semantic",
+    "store",
+    "storage",
+    "database",
+    "db",
+    "local",
+    "localstorage",
+    "browser",
+    "embeddings",
+    "text",
+    "search",
+    "similarity",
+    "OpenAI",
+    "API"
+  ],
   "scripts": {
     "build": "tsc",
     "bump": "npm version patch",

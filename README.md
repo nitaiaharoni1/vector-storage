@@ -1,9 +1,10 @@
 # Vector Storage
 
 Vector Storage is a lightweight and efficient vector database that stores document vectors in the browser's local
-storage. This package allows you to perform similarity searches on text documents using vector embeddings. It leverages
-OpenAI embeddings to convert text documents into vectors and provides an interface for searching similar documents based
-on cosine similarity.
+storage. This package allows you to perform semantic similarity searches on text documents using vector embeddings.
+Semantic search refers to the ability to understand the meaning and context of text documents and queries, enabling more
+accurate and relevant search results. Vector Storage leverages OpenAI embeddings to convert text documents into vectors
+and provides an interface for searching similar documents based on cosine similarity.
 
 ## Features
 
