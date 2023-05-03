@@ -1,23 +1,20 @@
-# Vector Storage 
-
-A simple and efficient vector database that stores document vectors in the browser's local storage. This package allows you to perform similarity searches on text documents using vector embeddings. It uses OpenAI embeddings to convert text documents into vectors and provides an interface for searching similar documents based on cosine similarity.
+# Vector Storage
+Vector Storage is a lightweight and efficient vector database that stores document vectors in the browser's local storage. This package allows you to perform similarity searches on text documents using vector embeddings. It leverages OpenAI embeddings to convert text documents into vectors and provides an interface for searching similar documents based on cosine similarity.
 
 ## Features
-
 - Store and manage document vectors in local storage
 - Perform similarity searches on text documents
 - Filter search results based on metadata or text content
-- Automatically manage storage size and trim documents when needed
+- Automatically manage storage size and remove least recently used documents when space limit is reached
 
 ## Installation
-
 Install the package using npm:
 
 ```bash
 npm install vector-storage
 ```
 
-##Usage
+## Usage
 Here is a basic example of how to use the VectorStorage class:
 
 ```javascript
@@ -38,46 +35,75 @@ console.log(results);
 
 ## API
 
-### `VectorStorage`
+### VectorStorage
 
 The main class for managing document vectors in local storage.
 
-#### `constructor(options: IVectorStorageOptions)`
+### IDocument Interface
+The IDocument interface represents a document object stored in the vector database. It contains the following properties:
 
-Creates a new instance of `VectorStorage`.
+```typescript
+interface Document {
+  h?: number; // The number of hits (accesses) for the document. Omit if the value is 0.
+  md: object; // The metadata associated with the document for filtering.
+  t: string; // The text content of the document.
+  ts: number; // The timestamp indicating when the document was added to the store.
+  vm: number; // The magnitude of the document vector.
+  v: number[]; // The vector representation of the document.
+}
+```
 
-- `options`: An object containing the following properties:
-  - `openAIApiKey` (required): The OpenAI API key used for generating embeddings.
+#### constructor(options: IVectorStorageOptions)
 
-#### `addText(text: string, metadata: object): Promise<void>`
+Creates a new instance of VectorStorage.
 
-Adds a text document to the store.
+**options**: An object containing the following properties:
+```typescript
+interface VectorStorageOptions {
+  openAIApiKey: string; // The OpenAI API key used for generating embeddings.
+  storeKey?: string; // The key used to store data in local storage. Defaults to 'VECTOR_DB'.
+  maxSizeInMB?: number; // The maximum size of the storage in megabytes. Defaults to 4.8. Cannot exceed 5.
+  debounceTime?: number; // The debounce time in milliseconds for saving to local storage. Defaults to 1000.
+  openaiModel?: string; // The OpenAI model used for generating embeddings. Defaults to 'text-embedding-ada-002'.
+}
+```
 
-- `text`: The text content of the document.
-- `metadata`: An object containing metadata associated with the document.
+#### addText(text: string, metadata: object): Promise<IDocument>
 
-#### `addTexts(texts: string[], metadatas: object[]): Promise<void>`
+Adds a text document to the store and returns the created document.
 
-Adds multiple text documents to the store.
+- **text**: The text content of the document.
+- **metadata**: An object containing metadata associated with the document.
 
-- `texts`: An array of text contents for the documents.
-- `metadatas`: An array of metadata objects associated with the documents.
+#### addTexts(texts: string[], metadatas: object[]): Promise<IDocument[]>
 
-#### `addDocuments(documents: IDocument[]): Promise<void>`
+Adds multiple text documents to the store and returns an array of created documents.
 
-Adds multiple documents to the store.
+- **texts**: An array of text contents for the documents.
+- **metadatas**: An array of metadata objects associated with the documents.
 
-- `documents`: An array of document objects, each containing text, metadata, and other properties.
+#### addDocuments(documents: IDocument[]): Promise<IDocument[]>
 
-#### `similaritySearch(params: ISimilaritySearchParams): Promise<IDocument[] | [IDocument, number][]>`
+Adds multiple documents to the store and returns an array of created documents.
 
-Performs a similarity search on the stored documents.
+- **documents**: An array of document objects, each containing text, metadata, and other properties.
 
-- `params`: An object containing the following properties:
-  - `query`: The query text or vector for the search.
-  - `k` (optional): The number of top results to return (default: 4).
-  - `filterOptions` (optional): An object specifying filter criteria for the search.
-  - `withScore` (optional): A boolean indicating whether to return similarity scores with the results (default: false).
+#### similaritySearch(params: ISimilaritySearchParams): Promise<IDocument[]>
+
+Performs a similarity search on the stored documents and returns an array of matching documents.
+
+**params**: An object containing the following properties:
+- **query**: The query text or vector for the search.
+- **k** (optional): The number of top results to return (default: 4).
+- **filterOptions** (optional): An object specifying filter criteria for the search.
+
+### LRU Mechanism
+The Least Recently Used (LRU) mechanism is used to manage the storage size and automatically remove documents when the storage size exceeds the specified limit. Documents are sorted by their hit counter (ascending) and then by their timestamp (ascending). Documents with the lowest hit count and oldest timestamps are removed first until the storage size is below the limit.
+
+### Cosine Similarity Algorithm
+Cosine similarity is a measure of similarity between two non-zero vectors in an inner product space. It is defined as the cosine of the angle between the two vectors. The cosine similarity value ranges from -1 to 1, where 1 indicates complete similarity, 0 indicates no similarity, and -1 indicates complete dissimilarity.
+
+In this package, cosine similarity is used to measure the similarity between document vectors and the query vector. The cosine similarity score is calculated using the dot product of the vectors, divided by the product of their magnitudes.
 
 ## Contributing
 
@@ -94,7 +120,6 @@ Please ensure that your code follows the project's coding style and that all tes
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for the full license text.
+This project is licensed under the MIT License. See the LICENSE file for the full license text.
 
 Copyright (c) Nitai Aharoni. All rights reserved.
-
