@@ -99,7 +99,8 @@ export class VectorStorage {
         },
       },
     );
-    return response.data.data.map((item) => item.embedding);
+    const embeddingsResponse = response.data.data;
+    return embeddingsResponse.map((res) => res.embedding.map((value) => parseFloat(value.toFixed(3))));
   }
 
   private async embedText(query: string): Promise<number[]> {
