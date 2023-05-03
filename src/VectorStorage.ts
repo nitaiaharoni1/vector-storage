@@ -100,10 +100,7 @@ export class VectorStorage {
       },
     );
     const embeddings = response.data.data.map((data) => data.embedding);
-    const embds = this.parseEmbeddings(embeddings);
-    // eslint-disable-next-line no-console
-    console.log('Embeddings:', embds);
-    return embds;
+    return this.parseEmbeddings(embeddings);
   }
 
   private parseEmbeddings(embeddings: number[][]): number[][] {
