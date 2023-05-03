@@ -3,31 +3,47 @@ import { IDocument } from './types/IDocument';
 import { ISimilaritySearchParams } from './types/ISimilaritySearchParams';
 import { IVectorStorageOptions } from './types/IVectorStorageOptions';
 import { calcVectorMagnitude, getCosineSimilarityScore } from './utils/cosineSimilarity';
+import { constants } from './constants';
 import { filterDocuments } from './utils/filterDocuments';
 import { getObjectSizeInMB } from './utils/getObjectSizeInMB';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
 
 export class VectorStorage {
-  private readonly storeKey = 'VECTOR_DB';
-  private readonly maxSizeInMB = 4.8; // 4.8 MB
-  private readonly debounceTime = 1000; // 1 second
   private documents: IDocument[] = [];
+  private readonly storeKey: string;
+  private readonly maxSizeInMB: number;
+  private readonly debounceTime: number;
+  private readonly openaiModel: string;
   private readonly openaiApiKey: string;
-  private readonly debouncedSaveToLocalStorage = debounce(() => {
-    this.saveToLocalStorage();
-  }, this.debounceTime);
+  private readonly debouncedSaveToLocalStorage: () => void;
 
   constructor(options: IVectorStorageOptions) {
+    // Load options from the user and use default values from constants
+    this.storeKey = options.storeKey ?? constants.DEFAULT_STORE_KEY;
+
+    if (options.maxSizeInMB && options.maxSizeInMB > 5) {
+      throw new Error('Max size in MB cannot be greater than 5.');
+    }
+
+    this.maxSizeInMB = options.maxSizeInMB ?? constants.DEFAULT_MAX_SIZE_IN_MB;
+    this.debounceTime = options.debounceTime ?? constants.DEFAULT_DEBOUNCE_TIME;
+    this.openaiModel = options.openaiModel ?? constants.DEFAULT_OPENAI_MODEL;
+
     this.loadFromLocalStorage();
     const { openAIApiKey } = options;
     if (!openAIApiKey) {
       throw new Error('OpenAI API key is required.');
     }
     this.openaiApiKey = openAIApiKey;
+
+    // Initialize the debounced save function
+    this.debouncedSaveToLocalStorage = debounce(() => {
+      this.saveToLocalStorage();
+    }, this.debounceTime);
   }
 
-  async addText(text: string, metadata: object): Promise<IDocument> {
+  public async addText(text: string, metadata: object): Promise<IDocument> {
     // Create a document from the text and metadata
     const doc: IDocument = {
       hits: 0,
@@ -37,13 +53,11 @@ export class VectorStorage {
       vecMag: 0,
       vector: [], // Added hit counter
     };
-    console.log(doc);
     const docs = await this.addDocuments([doc]);
-    console.log(docs[0]);
     return docs[0];
   }
 
-  async addTexts(texts: string[], metadatas: object[]): Promise<IDocument[]> {
+  public async addTexts(texts: string[], metadatas: object[]): Promise<IDocument[]> {
     if (texts.length !== metadatas.length) {
       throw new Error('The lengths of texts and metadata arrays must match.');
     }
@@ -51,7 +65,7 @@ export class VectorStorage {
     return await Promise.all(promises);
   }
 
-  async addDocuments(documents: IDocument[]): Promise<IDocument[]> {
+  public async addDocuments(documents: IDocument[]): Promise<IDocument[]> {
     // filter out already existing documents
     const newDocuments = documents.filter((doc) => !this.documents.some((d) => d.text === doc.text));
     // If there are no new documents, return an empty array
@@ -66,7 +80,7 @@ export class VectorStorage {
     });
     // Add new documents to the store
     this.documents.push(...newDocuments);
-    this.trimDocuments();
+    this.removeDocsLRU();
     // Save to local storage
     this.debouncedSaveToLocalStorage();
     return newDocuments;
@@ -74,10 +88,10 @@ export class VectorStorage {
 
   private async embedTexts(texts: string[]): Promise<number[][]> {
     const response = await axios.post<ICreateEmbeddingResponse>(
-      'https://api.openai.com/v1/embeddings',
+      constants.OPENAI_API_URL, // Use constant for OpenAI API URL
       {
         input: texts,
-        model: 'text-embedding-ada-002',
+        model: this.openaiModel,
       },
       {
         headers: {
@@ -107,7 +121,7 @@ export class VectorStorage {
     // Update hit counters for the top k documents
     this.updateHitCounters(results);
     if (results.length > 0) {
-      this.trimDocuments();
+      this.removeDocsLRU();
       this.debouncedSaveToLocalStorage();
     }
     return results;
@@ -142,7 +156,7 @@ export class VectorStorage {
     if (storedData) {
       this.documents = JSON.parse(storedData);
     }
-    this.trimDocuments();
+    this.removeDocsLRU();
   }
 
   private saveToLocalStorage(): void {
@@ -150,7 +164,7 @@ export class VectorStorage {
     localStorage.setItem(this.storeKey, JSON.stringify(data));
   }
 
-  private trimDocuments(): void {
+  private removeDocsLRU(): void {
     if (getObjectSizeInMB(this.documents) > this.maxSizeInMB) {
       // Sort documents by hit counter (ascending) and then by timestamp (ascending)
       this.documents.sort((a, b) => a.hits - b.hits || a.timestamp - b.timestamp);
