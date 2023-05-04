@@ -97,12 +97,6 @@ Adds multiple text documents to the store and returns an array of created docume
 - **texts**: An array of text contents for the documents.
 - **metadatas**: An array of metadata objects associated with the documents.
 
-#### addDocuments(documents: IVSDocument[]): Promise<IVSDocument[]>
-
-Adds multiple documents to the store and returns an array of created documents.
-
-- **documents**: An array of document objects, each containing text, metadata, and other properties.
-
 #### similaritySearch(params: ISimilaritySearchParams): Promise<IVSDocument[]>
 
 Performs a similarity search on the stored documents and returns an array of matching documents.
