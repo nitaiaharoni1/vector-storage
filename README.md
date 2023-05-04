@@ -67,14 +67,14 @@ console.log(results);
 
 The main class for managing document vectors in local storage.
 
-#### constructor(options: IVectorStorageOptions)
+#### constructor(options: IVSOptions)
 
 Creates a new instance of VectorStorage.
 
 **options**: An object containing the following properties:
 
 ```typescript
-interface IVectorStorageOptions {
+interface IVSOptions {
   openAIApiKey: string; // The OpenAI API key used for generating embeddings.
   storeKey?: string; // The key used to store data in local storage. Defaults to 'VECTOR_DB'.
   maxSizeInMB?: number; // The maximum size of the storage in megabytes. Defaults to 4.8. Cannot exceed 5.
@@ -83,27 +83,27 @@ interface IVectorStorageOptions {
 }
 ```
 
-#### addText(text: string, metadata: object): Promise<IVectorStorageDocument>
+#### addText(text: string, metadata: object): Promise<IVSDocument>
 
 Adds a text document to the store and returns the created document.
 
 - **text**: The text content of the document.
 - **metadata**: An object containing metadata associated with the document.
 
-#### addTexts(texts: string[], metadatas: object[]): Promise<IVectorStorageDocument[]>
+#### addTexts(texts: string[], metadatas: object[]): Promise<IVSDocument[]>
 
 Adds multiple text documents to the store and returns an array of created documents.
 
 - **texts**: An array of text contents for the documents.
 - **metadatas**: An array of metadata objects associated with the documents.
 
-#### addDocuments(documents: IVectorStorageDocument[]): Promise<IVectorStorageDocument[]>
+#### addDocuments(documents: IVSDocument[]): Promise<IVSDocument[]>
 
 Adds multiple documents to the store and returns an array of created documents.
 
 - **documents**: An array of document objects, each containing text, metadata, and other properties.
 
-#### similaritySearch(params: ISimilaritySearchParams): Promise<IVectorStorageDocument[]>
+#### similaritySearch(params: ISimilaritySearchParams): Promise<IVSDocument[]>
 
 Performs a similarity search on the stored documents and returns an array of matching documents.
 
@@ -113,13 +113,13 @@ Performs a similarity search on the stored documents and returns an array of mat
 - **k** (optional): The number of top results to return (default: 4).
 - **filterOptions** (optional): An object specifying filter criteria for the search.
 
-#### IVectorStorageDocument Interface
+#### IVSDocument Interface
 
-The IVectorStorageDocument interface represents a document object stored in the vector database. It contains the following
+The IVSDocument interface represents a document object stored in the vector database. It contains the following
 properties:
 
 ```typescript
-interface IVectorStorageDocument {
+interface IVSDocument {
   h?: number; // The number of hits (accesses) for the document. Omit if the value is 0.
   md: object; // The metadata associated with the document for filtering.
   t: string; // The text content of the document.

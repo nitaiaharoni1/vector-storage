@@ -1,4 +1,4 @@
-export interface IVectorStorageOptions {
+export interface IVSOptions {
   openAIApiKey: string; // The OpenAI API key used for generating embeddings.
   storeKey?: string; // The key used to store data in local storage. Defaults to 'VECTOR_DB'.
   maxSizeInMB?: number; // The maximum size of the storage in megabytes. Defaults to 4.8. Cannot exceed 5.

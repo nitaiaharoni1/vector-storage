@@ -1,5 +1,5 @@
 export { VectorStorage } from './VectorStorage';
-export type { IVectorStorageOptions } from './types/IVectorStorageOptions';
-export type { IVectorStorageDocument } from './types/IVectorStorageDocument';
-export type { IVectorStorageFilterOptions } from './types/IVectorStorageFilterOptions';
-export type { IVectorStorageSimilaritySearchParams } from './types/IVectorStorageSimilaritySearchParams';
+export type { IVSOptions } from './types/IVSOptions';
+export type { IVSDocument } from './types/IVSDocument';
+export type { IVSFilterOptions } from './types/IVSFilterOptions';
+export type { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
