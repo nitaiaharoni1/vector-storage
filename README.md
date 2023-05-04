@@ -34,7 +34,7 @@ cosine similarity score is calculated using the dot product of the vectors, divi
 Install the package using npm:
 
 ```bash
-npm install vector-storage
+npm i vector-storage
 ```
 
 ## Usage
