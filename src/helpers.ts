@@ -1,5 +1,5 @@
-import { IVSFilterCriteria, IVSFilterOptions } from './types/IVSFilterOptions';
 import { IVSDocument } from './types/IVSDocument';
+import { IVSFilterCriteria, IVSFilterOptions } from './types/IVSFilterOptions';
 
 export function calcVectorMagnitude(doc: IVSDocument): number {
   return Math.sqrt(doc.v.reduce((sum, val) => sum + val * val, 0));

@@ -2,10 +2,10 @@ import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
 import { IVSDocument, IVSSimilaritySearchResponse } from './types/IVSDocument';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
+import { calcVectorMagnitude, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
 import { constants } from './constants';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
-import { calcVectorMagnitude, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
 
 export class VectorStorage {
   private documents: IVSDocument[] = [];
@@ -128,7 +128,6 @@ export class VectorStorage {
     }
     return results;
   }
-
 
   private async calculateQueryVectorAndMagnitude(query: string | number[]): Promise<{ queryVector: number[]; queryMagnitude: number }> {
     const queryVector = typeof query === 'string' ? await this.embedText(query) : query;
