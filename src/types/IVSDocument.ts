@@ -8,5 +8,5 @@ export interface IVSDocument {
 }
 
 export interface IVSSimilaritySearchResponse extends IVSDocument {
-  s: number; // score: This is the cosine similarity score for the document. It ranges from 0 to 1, where 1 means the document is extremely similar or identical to the query, and a score close to 0 indicates that the document is dissimilar to the query.
+  score: number; // score: This is the cosine similarity score for the document. It ranges from 0 to 1, where 1 means the document is extremely similar or identical to the query, and a score close to 0 indicates that the document is dissimilar to the query.
 }

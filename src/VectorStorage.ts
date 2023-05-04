@@ -62,7 +62,7 @@ export class VectorStorage {
     return await Promise.all(promises);
   }
 
-  public async addDocuments(documents: IVSDocument[]): Promise<IVSDocument[]> {
+  private async addDocuments(documents: IVSDocument[]): Promise<IVSDocument[]> {
     // filter out already existing documents
     const newDocuments = documents.filter((doc) => !this.documents.some((d) => d.t === doc.t));
     // If there are no new documents, return an empty array
@@ -119,7 +119,7 @@ export class VectorStorage {
     const scoresPairs: Array<[IVSDocument, number]> = this.calculateSimilarityScores(filteredDocuments, queryVector, queryMagnitude);
     const sortedPairs = scoresPairs.sort((a, b) => b[1] - a[1]);
     // Return the top k documents with their similarity scores
-    const results = sortedPairs.slice(0, k).map((pair) => ({ ...pair[0], s: pair[1] }));
+    const results = sortedPairs.slice(0, k).map((pair) => ({ ...pair[0], score: pair[1] }));
     // Update hit counters for the top k documents
     this.updateHitCounters(results);
     if (results.length > 0) {
