@@ -9,7 +9,7 @@ Vector Storage is a lightweight and efficient vector database that stores docume
 - Filter search results based on metadata or text content
 - Automatically manage storage size and remove least recently used documents when space limit is reached
 
-### Cosine Similarity Algorithm
+## Cosine Similarity Algorithm
 
 Cosine similarity is a measure of similarity between two non-zero vectors in an inner product space. It is defined as
 the cosine of the angle between the two vectors. The cosine similarity value ranges from -1 to 1, where 1 indicates
@@ -18,7 +18,7 @@ complete similarity, 0 indicates no similarity, and -1 indicates complete dissim
 In this package, cosine similarity is used to measure the similarity between document vectors and the query vector. The
 cosine similarity score is calculated using the dot product of the vectors, divided by the product of their magnitudes.
 
-### LRU Mechanism
+## LRU Mechanism
 
 The Least Recently Used (LRU) mechanism is used to manage the storage size and automatically remove documents when the storage size exceeds the specified limit. Documents are sorted by their hit counter (ascending) and then by their timestamp (ascending). Documents with the lowest hit count and oldest timestamps are removed first until the storage size is below the limit.
 
