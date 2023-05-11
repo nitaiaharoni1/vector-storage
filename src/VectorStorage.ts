@@ -2,6 +2,7 @@ import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
 import { IVSDocument, IVSSimilaritySearchResponse } from './types/IVSDocument';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
+import { VectorStorageDatabase } from './VectorStorageDatabase';
 import { calcVectorMagnitude, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
 import { constants } from './constants';
 import axios from 'axios';
@@ -9,7 +10,7 @@ import debounce from 'lodash/debounce';
 
 export class VectorStorage {
   private documents: IVSDocument[] = [];
-  private readonly storeKey: string;
+  private readonly db = new VectorStorageDatabase();
   private readonly maxSizeInMB: number;
   private readonly debounceTime: number;
   private readonly openaiModel: string;
@@ -18,7 +19,6 @@ export class VectorStorage {
 
   constructor(options: IVSOptions) {
     // Load options from the user and use default values from constants
-    this.storeKey = options.storeKey ?? constants.DEFAULT_STORE_KEY;
 
     if (options.maxSizeInMB && options.maxSizeInMB > 5) {
       throw new Error('Max size in MB cannot be greater than 5.');
@@ -36,19 +36,19 @@ export class VectorStorage {
     this.openaiApiKey = openAIApiKey;
 
     // Initialize the debounced save function
-    this.debouncedSaveToLocalStorage = debounce(() => {
-      this.saveToLocalStorage();
+    this.debouncedSaveToLocalStorage = debounce(async () => {
+      await this.saveToLocalStorage();
     }, this.debounceTime);
   }
 
   public async addText(text: string, metadata: object): Promise<IVSDocument> {
     // Create a document from the text and metadata
     const doc: IVSDocument = {
-      md: metadata, // metadata
-      t: text, // text
-      ts: Date.now(), // timestamp
-      v: [], // vector
-      vm: 0, // vecMag
+      metadata,
+      text,
+      timestamp: Date.now(),
+      vector: [],
+      vectorMag: 0,
     };
     const docs = await this.addDocuments([doc]);
     return docs[0];
@@ -64,16 +64,16 @@ export class VectorStorage {
 
   private async addDocuments(documents: IVSDocument[]): Promise<IVSDocument[]> {
     // filter out already existing documents
-    const newDocuments = documents.filter((doc) => !this.documents.some((d) => d.t === doc.t));
+    const newDocuments = documents.filter((doc) => !this.documents.some((d) => d.text === doc.text));
     // If there are no new documents, return an empty array
     if (newDocuments.length === 0) {
       return [];
     }
-    const newVectors = await this.embedTexts(newDocuments.map((doc) => doc.t));
+    const newVectors = await this.embedTexts(newDocuments.map((doc) => doc.text));
     // Assign vectors and precompute vector magnitudes for new documents
     newDocuments.forEach((doc, index) => {
-      doc.v = newVectors[index];
-      doc.vm = calcVectorMagnitude(doc);
+      doc.vector = newVectors[index];
+      doc.vectorMag = calcVectorMagnitude(doc);
     });
     // Add new documents to the store
     this.documents.push(...newDocuments);
@@ -97,12 +97,7 @@ export class VectorStorage {
         },
       },
     );
-    const embeddings = response.data.data.map((data) => data.embedding);
-    return this.parseEmbeddings(embeddings);
-  }
-
-  private parseEmbeddings(embeddings: number[][]): number[][] {
-    return embeddings.map((embedding) => embedding.map((val) => parseFloat(val.toFixed(3))));
+    return response.data.data.map((data) => data.embedding);
   }
 
   private async embedText(query: string): Promise<number[]> {
@@ -137,35 +132,35 @@ export class VectorStorage {
 
   private calculateSimilarityScores(filteredDocuments: IVSDocument[], queryVector: number[], queryMagnitude: number): Array<[IVSDocument, number]> {
     return filteredDocuments.map((doc) => {
-      const dotProduct = doc.v.reduce((sum, val, i) => sum + val * queryVector[i], 0);
-      const score = getCosineSimilarityScore(dotProduct, doc.vm, queryMagnitude);
+      const dotProduct = doc.vector.reduce((sum, val, i) => sum + val * queryVector[i], 0);
+      const score = getCosineSimilarityScore(dotProduct, doc.vectorMag, queryMagnitude);
       return [doc, score];
     });
   }
 
   private updateHitCounters(results: IVSDocument[]): void {
     results.forEach((doc) => {
-      doc.h = (doc.h ?? 0) + 1; // Update hit counter
+      doc.hits = (doc.hits ?? 0) + 1; // Update hit counter
     });
   }
 
-  private loadFromLocalStorage(): void {
-    const storedData = localStorage.getItem(this.storeKey);
+  private async loadFromLocalStorage(): Promise<void> {
+    const storedData = await this.db.documents.toArray();
     if (storedData) {
-      this.documents = JSON.parse(storedData);
+      this.documents = storedData;
     }
     this.removeDocsLRU();
   }
 
-  private saveToLocalStorage(): void {
-    const data = this.documents;
-    localStorage.setItem(this.storeKey, JSON.stringify(data));
+  private async saveToLocalStorage(): Promise<void> {
+    await this.db.documents.clear();
+    await this.db.documents.bulkAdd(this.documents);
   }
 
   private removeDocsLRU(): void {
     if (getObjectSizeInMB(this.documents) > this.maxSizeInMB) {
       // Sort documents by hit counter (ascending) and then by timestamp (ascending)
-      this.documents.sort((a, b) => (a.h ?? 0) - (b.h ?? 0) || a.ts - b.ts);
+      this.documents.sort((a, b) => (a.hits ?? 0) - (b.hits ?? 0) || a.timestamp - b.timestamp);
 
       // Remove documents until the size is below the limit
       while (getObjectSizeInMB(this.documents) > this.maxSizeInMB) {

@@ -2,7 +2,7 @@ import { IVSDocument } from './types/IVSDocument';
 import { IVSFilterCriteria, IVSFilterOptions } from './types/IVSFilterOptions';
 
 export function calcVectorMagnitude(doc: IVSDocument): number {
-  return Math.sqrt(doc.v.reduce((sum, val) => sum + val * val, 0));
+  return Math.sqrt(doc.vector.reduce((sum, val) => sum + val * val, 0));
 }
 
 export function getCosineSimilarityScore(dotProduct: number, magnitudeA: number, magnitudeB: number): number {
@@ -26,14 +26,14 @@ function matchesCriteria(document: IVSDocument, criteria: IVSFilterCriteria): bo
   if (criteria.metadata) {
     for (const key in criteria.metadata) {
       // @ts-expect-error
-      if (document.md[key] !== criteria.metadata[key]) {
+      if (document.metadata[key] !== criteria.metadata[key]) {
         return false;
       }
     }
   }
   if (criteria.text) {
     const texts = Array.isArray(criteria.text) ? criteria.text : [criteria.text];
-    if (!texts.includes(document.t)) {
+    if (!texts.includes(document.text)) {
       return false;
     }
   }

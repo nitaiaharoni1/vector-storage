@@ -1,24 +1,13 @@
 # Vector Storage
 
-Vector Storage is a lightweight and efficient vector database that stores document vectors in the browser's local
-storage. This package allows you to perform semantic similarity searches on text documents using vector embeddings.
-Semantic search refers to the ability to understand the meaning and context of text documents and queries, enabling more
-accurate and relevant search results. Vector Storage leverages OpenAI embeddings to convert text documents into vectors
-and provides an interface for searching similar documents based on cosine similarity.
+Vector Storage is a lightweight and efficient vector database that stores document vectors in the browser's IndexedDB. This package allows you to perform semantic similarity searches on text documents using vector embeddings. Semantic search refers to the ability to understand the meaning and context of text documents and queries, enabling more accurate and relevant search results. Vector Storage leverages OpenAI embeddings to convert text documents into vectors and provides an interface for searching similar documents based on cosine similarity.
 
 ## Features
 
-- Store and manage document vectors in local storage
+- Store and manage document vectors in IndexedDB
 - Perform similarity searches on text documents
 - Filter search results based on metadata or text content
 - Automatically manage storage size and remove least recently used documents when space limit is reached
-
-### LRU Mechanism
-
-The Least Recently Used (LRU) mechanism is used to manage the storage size and automatically remove documents when the
-storage size exceeds the specified limit. Documents are sorted by their hit counter (ascending) and then by their
-timestamp (ascending). Documents with the lowest hit count and oldest timestamps are removed first until the storage
-size is below the limit.
 
 ### Cosine Similarity Algorithm
 
@@ -28,6 +17,10 @@ complete similarity, 0 indicates no similarity, and -1 indicates complete dissim
 
 In this package, cosine similarity is used to measure the similarity between document vectors and the query vector. The
 cosine similarity score is calculated using the dot product of the vectors, divided by the product of their magnitudes.
+
+### LRU Mechanism
+
+The Least Recently Used (LRU) mechanism is used to manage the storage size and automatically remove documents when the storage size exceeds the specified limit. Documents are sorted by their hit counter (ascending) and then by their timestamp (ascending). Documents with the lowest hit count and oldest timestamps are removed first until the storage size is below the limit.
 
 ## Installation
 
@@ -65,7 +58,7 @@ console.log(results);
 
 ### VectorStorage
 
-The main class for managing document vectors in local storage.
+The main class for managing document vectors in IndexedDB.
 
 #### constructor(options: IVSOptions)
 
@@ -76,28 +69,27 @@ Creates a new instance of VectorStorage.
 ```typescript
 interface IVSOptions {
   openAIApiKey: string; // The OpenAI API key used for generating embeddings.
-  storeKey?: string; // The key used to store data in local storage. Defaults to 'VECTOR_DB'.
-  maxSizeInMB?: number; // The maximum size of the storage in megabytes. Defaults to 4.8. Cannot exceed 5.
-  debounceTime?: number; // The debounce time in milliseconds for saving to local storage. Defaults to 1000.
+  maxSizeInMB?: number; // The maximum size of the storage in megabytes. Defaults to 2GB
+  debounceTime?: number; // The debounce time in milliseconds for saving to IndexedDB. Defaults to 0.
   openaiModel?: string; // The OpenAI model used for generating embeddings. Defaults to 'text-embedding-ada-002'.
 }
 ```
 
-#### addText(text: string, metadata: object): Promise<IVSDocument>
+### addText(text: string, metadata: object): Promise<IVSDocument>
 
 Adds a text document to the store and returns the created document.
 
 - **text**: The text content of the document.
 - **metadata**: An object containing metadata associated with the document.
 
-#### addTexts(texts: string[], metadatas: object[]): Promise<IVSDocument[]>
+### addTexts(texts: string[], metadatas: object[]): Promise<IVSDocument[]>
 
 Adds multiple text documents to the store and returns an array of created documents.
 
 - **texts**: An array of text contents for the documents.
 - **metadatas**: An array of metadata objects associated with the documents.
 
-#### similaritySearch(params: ISimilaritySearchParams): Promise<IVSDocument[]>
+### similaritySearch(params: ISimilaritySearchParams): Promise<IVSDocument[]>
 
 Performs a similarity search on the stored documents and returns an array of matching documents.
 
@@ -107,19 +99,18 @@ Performs a similarity search on the stored documents and returns an array of mat
 - **k** (optional): The number of top results to return (default: 4).
 - **filterOptions** (optional): An object specifying filter criteria for the search.
 
-#### IVSDocument Interface
+### IVSDocument Interface
 
-The IVSDocument interface represents a document object stored in the vector database. It contains the following
-properties:
+The IVSDocument interface represents a document object stored in the vector database. It contains the following properties:
 
 ```typescript
 interface IVSDocument {
-  h?: number; // The number of hits (accesses) for the document. Omit if the value is 0.
-  md: object; // The metadata associated with the document for filtering.
-  t: string; // The text content of the document.
-  ts: number; // The timestamp indicating when the document was added to the store.
-  vm: number; // The magnitude of the document vector.
-  v: number[]; // The vector representation of the document.
+  hits?: number; // The number of hits (accesses) for the document. Omit if the value is 0.
+  metadata: object; // The metadata associated with the document for filtering.
+  text: string; // The text content of the document.
+  timestamp: number; // The timestamp indicating when the document was added to the store.
+  vectorMag: number; // The magnitude of the document vector.
+  vector: number[]; // The vector representation of the document.
 }
 ```
 
@@ -134,8 +125,7 @@ Contributions to this project are welcome! If you would like to contribute, plea
 5. Push your changes to your fork on GitHub.
 6. Open a pull request from your branch to the main repository.
 
-Please ensure that your code follows the project's coding style and that all tests pass before submitting a pull
-request. If you find any bugs or have suggestions for improvements, feel free to open an issue on GitHub.
+Please ensure that your code follows the project's coding style and that all tests pass before submitting a pull request. If you find any bugs or have suggestions for improvements, feel free to open an issue on GitHub.
 
 ## License
 
