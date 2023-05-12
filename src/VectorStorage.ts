@@ -19,11 +19,6 @@ export class VectorStorage {
 
   constructor(options: IVSOptions) {
     // Load options from the user and use default values from constants
-
-    if (options.maxSizeInMB && options.maxSizeInMB > 5) {
-      throw new Error('Max size in MB cannot be greater than 5.');
-    }
-
     this.maxSizeInMB = options.maxSizeInMB ?? constants.DEFAULT_MAX_SIZE_IN_MB;
     this.debounceTime = options.debounceTime ?? constants.DEFAULT_DEBOUNCE_TIME;
     this.openaiModel = options.openaiModel ?? constants.DEFAULT_OPENAI_MODEL;
