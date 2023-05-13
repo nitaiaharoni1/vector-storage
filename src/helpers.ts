@@ -52,3 +52,18 @@ export function getObjectSizeInMB(obj: object): number {
 //   const magnitudeB = Math.sqrt(vecB.reduce((sum, val) => sum + val * val, 0));
 //   return getCosineSimilarityScore(dotProduct, magnitudeA, magnitudeB);
 // }
+
+export function debounce(func: () => void, delay: number): () => void {
+  let timeoutId: number | null;
+
+  // eslint-disable-next-line func-names
+  return function (this: any) {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = window.setTimeout(() => {
+      // eslint-disable-next-line no-invalid-this
+      func.apply(this);
+    }, delay);
+  };
+}

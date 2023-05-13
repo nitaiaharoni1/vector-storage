@@ -1,10 +1,10 @@
+import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
 import { IVSDocument, IVSSimilaritySearchResponse } from './types/IVSDocument';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
 import { VectorStorageDatabase } from './VectorStorageDatabase';
-import { calcVectorMagnitude, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
+import { calcVectorMagnitude, debounce, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
 import { constants } from './constants';
-import debounce from 'lodash/debounce';
 
 export class VectorStorage {
   private documents: IVSDocument[] = [];
@@ -93,8 +93,8 @@ export class VectorStorage {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const responseData = await response.json();
-    return responseData.data.map((data as any) => data.embedding);
+    const responseData = (await response.json()) as ICreateEmbeddingResponse;
+    return responseData.data.map((data) => data.embedding);
   }
 
   private async embedText(query: string): Promise<number[]> {
