@@ -1,11 +1,9 @@
-import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
 import { IVSDocument, IVSSimilaritySearchResponse } from './types/IVSDocument';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
 import { VectorStorageDatabase } from './VectorStorageDatabase';
 import { calcVectorMagnitude, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
 import { constants } from './constants';
-import axios from 'axios';
 import debounce from 'lodash/debounce';
 
 export class VectorStorage {
@@ -79,20 +77,24 @@ export class VectorStorage {
   }
 
   private async embedTexts(texts: string[]): Promise<number[][]> {
-    const response = await axios.post<ICreateEmbeddingResponse>(
-      constants.OPENAI_API_URL, // Use constant for OpenAI API URL
-      {
+    const response = await fetch(constants.OPENAI_API_URL, {
+      body: JSON.stringify({
         input: texts,
         model: this.openaiModel,
+      }),
+      headers: {
+        Authorization: `Bearer ${this.openaiApiKey}`,
+        'Content-Type': 'application/json',
       },
-      {
-        headers: {
-          Authorization: `Bearer ${this.openaiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
-    return response.data.data.map((data) => data.embedding);
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    return responseData.data.map((data as any) => data.embedding);
   }
 
   private async embedText(query: string): Promise<number[]> {
