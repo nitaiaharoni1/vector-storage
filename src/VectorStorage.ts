@@ -1,22 +1,30 @@
 import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
+import { IDBPDatabase, openDB } from 'idb';
 import { IVSDocument, IVSSimilaritySearchResponse } from './types/IVSDocument';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
 import { calcVectorMagnitude, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
 import { constants } from './constants';
-import { openDB } from 'idb';
 
-const dbPromise = openDB('VectorStorageDatabase', 2, {
-  upgrade(db) {
-    const documentStore = db.createObjectStore('documents', { autoIncrement: true, keyPath: 'id' });
-    documentStore.createIndex('text', 'text', { unique: true });
-    documentStore.createIndex('metadata', 'metadata');
-    documentStore.createIndex('timestamp', 'timestamp');
-    documentStore.createIndex('vector', 'vector');
-    documentStore.createIndex('vectorMag', 'vectorMag');
-    documentStore.createIndex('hits', 'hits');
-  },
-});
+let dbPromise: Promise<IDBPDatabase<any>>;
+try {
+  dbPromise = openDB<any>('VectorStorageDatabase', 3, {
+    upgrade(db) {
+      const documentStore = db.createObjectStore('documents', { autoIncrement: true, keyPath: 'id' });
+      documentStore.createIndex('text', 'text', { unique: true });
+      documentStore.createIndex('metadata', 'metadata');
+      documentStore.createIndex('timestamp', 'timestamp');
+      documentStore.createIndex('vector', 'vector');
+      documentStore.createIndex('vectorMag', 'vectorMag');
+      documentStore.createIndex('hits', 'hits');
+    },
+  });
+} catch (error) {
+  console.error('Failed to open the database:', error);
+}
+
+// @ts-expect-error
+dbPromise?.catch((error) => console.error('Error opening database:', error));
 
 export class VectorStorage {
   private documents: IVSDocument[] = [];
