@@ -6,7 +6,7 @@ import { calcVectorMagnitude, filterDocuments, getCosineSimilarityScore, getObje
 import { constants } from './constants';
 import { openDB } from 'idb';
 
-const dbPromise = openDB('VectorStorageDatabase', 1, {
+const dbPromise = openDB('VectorStorageDatabase', 2, {
   upgrade(db) {
     const documentStore = db.createObjectStore('documents', { autoIncrement: true, keyPath: 'id' });
     documentStore.createIndex('text', 'text', { unique: true });
