@@ -3,7 +3,7 @@ import { IVSDocument, IVSSimilaritySearchResponse } from './types/IVSDocument';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
 import { VectorStorageDatabase } from './VectorStorageDatabase';
-import { calcVectorMagnitude, debounce, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
+import { calcVectorMagnitude, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
 import { constants } from './constants';
 
 export class VectorStorage {
@@ -13,7 +13,6 @@ export class VectorStorage {
   private readonly debounceTime: number;
   private readonly openaiModel: string;
   private readonly openaiApiKey: string;
-  private readonly debouncedSaveToIndexDbStorage: () => void;
 
   constructor(options: IVSOptions) {
     // Load options from the user and use default values from constants
@@ -27,14 +26,6 @@ export class VectorStorage {
       throw new Error('OpenAI API key is required.');
     }
     this.openaiApiKey = openAIApiKey;
-
-    this.debouncedSaveToIndexDbStorage = this.debounceTime
-      ? debounce(async () => {
-          await this.saveToIndexDbStorage();
-        }, this.debounceTime)
-      : async () => {
-          await this.saveToIndexDbStorage();
-        };
   }
 
   public async addText(text: string, metadata: object): Promise<IVSDocument> {
@@ -75,7 +66,7 @@ export class VectorStorage {
     this.documents.push(...newDocuments);
     this.removeDocsLRU();
     // Save to index db storage
-    await this.debouncedSaveToIndexDbStorage();
+    await this.saveToIndexDbStorage();
     return newDocuments;
   }
 
@@ -119,7 +110,7 @@ export class VectorStorage {
     this.updateHitCounters(results);
     if (results.length > 0) {
       this.removeDocsLRU();
-      await this.debouncedSaveToIndexDbStorage();
+      await this.saveToIndexDbStorage();
     }
     return results;
   }
