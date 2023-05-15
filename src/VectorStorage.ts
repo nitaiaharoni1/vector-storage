@@ -13,7 +13,7 @@ export class VectorStorage {
   private readonly debounceTime: number;
   private readonly openaiModel: string;
   private readonly openaiApiKey: string;
-  private readonly debouncedSaveToLocalStorage: () => void;
+  private readonly debouncedSaveToIndexDbStorage: () => void;
 
   constructor(options: IVSOptions) {
     // Load options from the user and use default values from constants
@@ -21,17 +21,20 @@ export class VectorStorage {
     this.debounceTime = options.debounceTime ?? constants.DEFAULT_DEBOUNCE_TIME;
     this.openaiModel = options.openaiModel ?? constants.DEFAULT_OPENAI_MODEL;
 
-    this.loadFromLocalStorage();
+    this.loadFromIndexDbStorage();
     const { openAIApiKey } = options;
     if (!openAIApiKey) {
       throw new Error('OpenAI API key is required.');
     }
     this.openaiApiKey = openAIApiKey;
 
-    // Initialize the debounced save function
-    this.debouncedSaveToLocalStorage = debounce(async () => {
-      await this.saveToLocalStorage();
-    }, this.debounceTime);
+    this.debouncedSaveToIndexDbStorage = this.debounceTime
+      ? debounce(async () => {
+          await this.saveToIndexDbStorage();
+        }, this.debounceTime)
+      : async () => {
+          await this.saveToIndexDbStorage();
+        };
   }
 
   public async addText(text: string, metadata: object): Promise<IVSDocument> {
@@ -71,8 +74,8 @@ export class VectorStorage {
     // Add new documents to the store
     this.documents.push(...newDocuments);
     this.removeDocsLRU();
-    // Save to local storage
-    this.debouncedSaveToLocalStorage();
+    // Save to index db storage
+    await this.debouncedSaveToIndexDbStorage();
     return newDocuments;
   }
 
@@ -116,7 +119,7 @@ export class VectorStorage {
     this.updateHitCounters(results);
     if (results.length > 0) {
       this.removeDocsLRU();
-      this.debouncedSaveToLocalStorage();
+      await this.debouncedSaveToIndexDbStorage();
     }
     return results;
   }
@@ -141,7 +144,7 @@ export class VectorStorage {
     });
   }
 
-  private async loadFromLocalStorage(): Promise<void> {
+  private async loadFromIndexDbStorage(): Promise<void> {
     const storedData = await this.db.documents.toArray();
     if (storedData) {
       this.documents = storedData;
@@ -149,7 +152,7 @@ export class VectorStorage {
     this.removeDocsLRU();
   }
 
-  private async saveToLocalStorage(): Promise<void> {
+  private async saveToIndexDbStorage(): Promise<void> {
     await this.db.documents.clear();
     await this.db.documents.bulkAdd(this.documents);
   }

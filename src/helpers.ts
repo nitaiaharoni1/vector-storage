@@ -61,7 +61,8 @@ export function debounce(func: () => void, delay: number): () => void {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
-    timeoutId = window.setTimeout(() => {
+    // @ts-expect-error
+    timeoutId = setTimeout(() => {
       // eslint-disable-next-line no-invalid-this
       func.apply(this);
     }, delay);
