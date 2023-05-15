@@ -8,7 +8,7 @@ import { constants } from './constants';
 
 export class VectorStorage {
   private documents: IVSDocument[] = [];
-  private readonly db = new VectorStorageDatabase();
+  private readonly db;
   private readonly maxSizeInMB: number;
   private readonly debounceTime: number;
   private readonly openaiModel: string;
@@ -19,7 +19,7 @@ export class VectorStorage {
     this.maxSizeInMB = options.maxSizeInMB ?? constants.DEFAULT_MAX_SIZE_IN_MB;
     this.debounceTime = options.debounceTime ?? constants.DEFAULT_DEBOUNCE_TIME;
     this.openaiModel = options.openaiModel ?? constants.DEFAULT_OPENAI_MODEL;
-
+    this.db = new VectorStorageDatabase();
     this.loadFromIndexDbStorage();
     const { openAIApiKey } = options;
     if (!openAIApiKey) {
