@@ -144,8 +144,12 @@ export class VectorStorage {
   }
 
   private async saveToIndexDbStorage(): Promise<void> {
-    await this.db.documents.clear();
-    await this.db.documents.bulkAdd(this.documents);
+    try {
+      await this.db.documents.clear();
+      await this.db.documents.bulkAdd(this.documents);
+    } catch (error) {
+      console.error('Failed to save to IndexedDB:', error.message);
+    }
   }
 
   private removeDocsLRU(): void {
