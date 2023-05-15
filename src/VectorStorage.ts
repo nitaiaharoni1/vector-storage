@@ -1,22 +1,39 @@
 import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
+import { IDBPDatabase, openDB } from 'idb';
 import { IVSDocument, IVSSimilaritySearchResponse } from './types/IVSDocument';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
-import { VectorStorageDatabase } from './VectorStorageDatabase';
-import { calcVectorMagnitude, debounce, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
+import { calcVectorMagnitude, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
 import { constants } from './constants';
+
+let dbPromise: Promise<IDBPDatabase<any>>;
+try {
+  dbPromise = openDB<any>('VectorStorageDatabase', 10, {
+    upgrade(db) {
+      const documentStore = db.createObjectStore('documents', { autoIncrement: true, keyPath: 'id' });
+      documentStore.createIndex('text', 'text', { unique: true });
+      documentStore.createIndex('metadata', 'metadata');
+      documentStore.createIndex('timestamp', 'timestamp');
+      documentStore.createIndex('vector', 'vector');
+      documentStore.createIndex('vectorMag', 'vectorMag');
+      documentStore.createIndex('hits', 'hits');
+    },
+  });
+} catch (error) {
+  console.error('Failed to open the database:', error);
+}
+
+// @ts-expect-error
+dbPromise?.catch((error) => console.error('Error opening database:', error));
 
 export class VectorStorage {
   private documents: IVSDocument[] = [];
-  private readonly db = new VectorStorageDatabase();
   private readonly maxSizeInMB: number;
   private readonly debounceTime: number;
   private readonly openaiModel: string;
   private readonly openaiApiKey: string;
-  private readonly debouncedSaveToIndexDbStorage: () => void;
 
   constructor(options: IVSOptions) {
-    // Load options from the user and use default values from constants
     this.maxSizeInMB = options.maxSizeInMB ?? constants.DEFAULT_MAX_SIZE_IN_MB;
     this.debounceTime = options.debounceTime ?? constants.DEFAULT_DEBOUNCE_TIME;
     this.openaiModel = options.openaiModel ?? constants.DEFAULT_OPENAI_MODEL;
@@ -27,14 +44,6 @@ export class VectorStorage {
       throw new Error('OpenAI API key is required.');
     }
     this.openaiApiKey = openAIApiKey;
-
-    this.debouncedSaveToIndexDbStorage = this.debounceTime
-      ? debounce(async () => {
-          await this.saveToIndexDbStorage();
-        }, this.debounceTime)
-      : async () => {
-          await this.saveToIndexDbStorage();
-        };
   }
 
   public async addText(text: string, metadata: object): Promise<IVSDocument> {
@@ -75,7 +84,7 @@ export class VectorStorage {
     this.documents.push(...newDocuments);
     this.removeDocsLRU();
     // Save to index db storage
-    await this.debouncedSaveToIndexDbStorage();
+    await this.saveToIndexDbStorage();
     return newDocuments;
   }
 
@@ -119,7 +128,7 @@ export class VectorStorage {
     this.updateHitCounters(results);
     if (results.length > 0) {
       this.removeDocsLRU();
-      await this.debouncedSaveToIndexDbStorage();
+      await this.saveToIndexDbStorage();
     }
     return results;
   }
@@ -145,16 +154,22 @@ export class VectorStorage {
   }
 
   private async loadFromIndexDbStorage(): Promise<void> {
-    const storedData = await this.db.documents.toArray();
-    if (storedData) {
-      this.documents = storedData;
-    }
+    const db = await dbPromise;
+    this.documents = await db.getAll('documents');
     this.removeDocsLRU();
   }
 
   private async saveToIndexDbStorage(): Promise<void> {
-    await this.db.documents.clear();
-    await this.db.documents.bulkAdd(this.documents);
+    const db = await dbPromise;
+    try {
+      await db.clear('documents');
+      for (const doc of this.documents) {
+        // eslint-disable-next-line no-await-in-loop
+        await db.put('documents', doc);
+      }
+    } catch (error: any) {
+      console.error('Failed to save to IndexedDB:', error.message);
+    }
   }
 
   private removeDocsLRU(): void {
