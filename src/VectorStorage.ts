@@ -153,12 +153,8 @@ export class VectorStorage {
   }
 
   private async saveToIndexDbStorage(): Promise<void> {
-    try {
-      await this.db.documents.bulkAdd(this.documents);
-    } catch (error: any) {
-      console.error(error.message, error.stack);
-      throw error;
-    }
+    await this.db.documents.clear();
+    await this.db.documents.bulkAdd(this.documents);
   }
 
   private removeDocsLRU(): void {
