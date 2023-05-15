@@ -147,7 +147,7 @@ export class VectorStorage {
     try {
       await this.db.documents.clear();
       await this.db.documents.bulkAdd(this.documents);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save to IndexedDB:', error.message);
     }
   }
