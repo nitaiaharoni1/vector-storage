@@ -8,7 +8,7 @@ import { constants } from './constants';
 
 let dbPromise: Promise<IDBPDatabase<any>>;
 try {
-  dbPromise = openDB<any>('VectorStorageDatabase', 10, {
+  dbPromise = openDB<any>('VectorStorageDatabase', 20, {
     upgrade(db) {
       const documentStore = db.createObjectStore('documents', { autoIncrement: true, keyPath: 'id' });
       documentStore.createIndex('text', 'text', { unique: true });
