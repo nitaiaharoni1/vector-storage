@@ -34,7 +34,8 @@
   "author": "Nitai Aharoni",
   "license": "MIT",
   "dependencies": {
-    "dexie": "^3.2.3"
+    "dexie": "^3.2.3",
+    "idb": "^7.1.1"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.194",

@@ -2,24 +2,34 @@ import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
 import { IVSDocument, IVSSimilaritySearchResponse } from './types/IVSDocument';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
-import { VectorStorageDatabase } from './VectorStorageDatabase';
 import { calcVectorMagnitude, filterDocuments, getCosineSimilarityScore, getObjectSizeInMB } from './helpers';
 import { constants } from './constants';
+import { openDB } from 'idb';
+
+const dbPromise = openDB('VectorStorageDatabase', 1, {
+  upgrade(db) {
+    const documentStore = db.createObjectStore('documents', { autoIncrement: true, keyPath: 'id' });
+    documentStore.createIndex('text', 'text', { unique: true });
+    documentStore.createIndex('metadata', 'metadata');
+    documentStore.createIndex('timestamp', 'timestamp');
+    documentStore.createIndex('vector', 'vector');
+    documentStore.createIndex('vectorMag', 'vectorMag');
+    documentStore.createIndex('hits', 'hits');
+  },
+});
 
 export class VectorStorage {
   private documents: IVSDocument[] = [];
-  private readonly db;
   private readonly maxSizeInMB: number;
   private readonly debounceTime: number;
   private readonly openaiModel: string;
   private readonly openaiApiKey: string;
 
   constructor(options: IVSOptions) {
-    // Load options from the user and use default values from constants
     this.maxSizeInMB = options.maxSizeInMB ?? constants.DEFAULT_MAX_SIZE_IN_MB;
     this.debounceTime = options.debounceTime ?? constants.DEFAULT_DEBOUNCE_TIME;
     this.openaiModel = options.openaiModel ?? constants.DEFAULT_OPENAI_MODEL;
-    this.db = new VectorStorageDatabase();
+
     this.loadFromIndexDbStorage();
     const { openAIApiKey } = options;
     if (!openAIApiKey) {
@@ -136,17 +146,19 @@ export class VectorStorage {
   }
 
   private async loadFromIndexDbStorage(): Promise<void> {
-    const storedData = await this.db.documents.toArray();
-    if (storedData) {
-      this.documents = storedData;
-    }
+    const db = await dbPromise;
+    this.documents = await db.getAll('documents');
     this.removeDocsLRU();
   }
 
   private async saveToIndexDbStorage(): Promise<void> {
+    const db = await dbPromise;
     try {
-      await this.db.documents.clear();
-      await this.db.documents.bulkAdd(this.documents);
+      await db.clear('documents');
+      for (const doc of this.documents) {
+        // eslint-disable-next-line no-await-in-loop
+        await db.put('documents', doc);
+      }
     } catch (error: any) {
       console.error('Failed to save to IndexedDB:', error.message);
     }
