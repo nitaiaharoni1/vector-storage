@@ -1,7 +1,8 @@
 import { IVSFilterOptions } from './IVSFilterOptions';
 
 export interface IVSSimilaritySearchParams {
-  query: string | number[];
+  query: string;
   k?: number;
   filterOptions?: IVSFilterOptions;
+  includeValues?: boolean;
 }

@@ -54,6 +54,12 @@
         ]
       }
     ],
+    "no-undefined": "off",
+    "no-undef": "off",
+    "@typescript-eslint/no-this-alias": "off",
+    "func-names": "off",
+    "consistent-this": "off",
+    "no-invalid-this": "off",
     "prefer-named-capture-group": "off",
     "@typescript-eslint/no-confusing-void-expression": "off",
     "@typescript-eslint/await-thenable": "off",
