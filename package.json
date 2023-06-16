@@ -29,7 +29,8 @@
     "build": "tsc",
     "bump": "npm version patch",
     "package": "npm run lint && npm run build && npm run bump && npm publish",
-    "lint": "eslint --ext .ts src"
+    "lint": "eslint --ext .ts src",
+    "prepare": "npm run build"
   },
   "author": "Nitai Aharoni",
   "license": "MIT",
