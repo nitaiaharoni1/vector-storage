@@ -91,7 +91,7 @@ export class VectorStorage<T> {
     };
   }
 
-  private async clearAll(): Promise<void> {
+  public async clearAll(): Promise<void> {
     while (this.documents.length > 0) {
       this.documents.shift();
     }
