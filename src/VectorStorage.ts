@@ -90,6 +90,14 @@ export class VectorStorage<T> {
       similarItems: results,
     };
   }
+
+  private async clearAll(): Promise<void> {
+    while (this.documents.length > 0) {
+      this.documents.shift();
+    }
+    await this.saveToIndexDbStorage();
+  }
+
   
   private async initDB(): Promise<IDBPDatabase<any>> {
     return await openDB<any>('VectorStorageDatabase', undefined, {
