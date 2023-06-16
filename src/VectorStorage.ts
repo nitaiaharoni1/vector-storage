@@ -1,6 +1,7 @@
 import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
 import { IDBPDatabase, openDB } from 'idb';
 import { IVSDocument, IVSSimilaritySearchItem } from './types/IVSDocument';
+import { IVSFilterOptions } from './types/IVSFilterOptions';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
 import { constants } from './common/constants';
@@ -95,6 +96,17 @@ export class VectorStorage<T> {
     while (this.documents.length > 0) {
       this.documents.shift();
     }
+    await this.saveToIndexDbStorage();
+  }
+
+  public async clearMatching(filterOptions: IVSFilterOptions): Promise<void> {
+    const filteredDocuments = filterDocuments(this.documents, filterOptions);
+    filteredDocuments.forEach((doc) => {
+      const index = this.documents.findIndex((d) => d.text === doc.text);
+      if (index !== -1) {
+        this.documents.splice(index, 1);
+      }
+    });
     await this.saveToIndexDbStorage();
   }
 
