@@ -99,17 +99,11 @@ export class VectorStorage<T> {
     await this.saveToIndexDbStorage();
   }
 
-  public async clearMatching(filterOptions: IVSFilterOptions): Promise<void> {
+  public async retainMatching(filterOptions: IVSFilterOptions): Promise<void> {
     const filteredDocuments = filterDocuments(this.documents, filterOptions);
-    filteredDocuments.forEach((doc) => {
-      const index = this.documents.findIndex((d) => d.text === doc.text);
-      if (index !== -1) {
-        this.documents.splice(index, 1);
-      }
-    });
+    this.documents = filteredDocuments;
     await this.saveToIndexDbStorage();
   }
-
   
   private async initDB(): Promise<IDBPDatabase<any>> {
     return await openDB<any>('VectorStorageDatabase', undefined, {
