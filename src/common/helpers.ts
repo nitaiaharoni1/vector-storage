@@ -17,9 +17,11 @@ export function filterDocuments(documents: Array<IVSDocument<any>>, filterOption
 function matchesCriteria(document: IVSDocument<any>, criteria: IVSFilterCriteria): boolean {
   if (criteria.metadata) {
     for (const key in criteria.metadata) {
-      if (document.metadata[key] !== criteria.metadata[key]) {
-        return false;
-      }
+      if (Array.isArray(criteria.metadata[key])) {
+        if (!criteria.metadata[key].includes(document.metadata[key])) {
+          return false;
+        }
+      } else if (document.metadata[key] !== criteria.metadata[key]) return false;
     }
   }
   if (criteria.text) {
