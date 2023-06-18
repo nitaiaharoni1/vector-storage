@@ -38,7 +38,13 @@ Here is a basic example of how to use the VectorStorage class:
 import { VectorStorage } from "vector-storage";
 
 // Create an instance of VectorStorage
-const vectorStore = new VectorStorage({ openAIApiKey: "your-openai-api-key" });
+const vectorStore = new VectorStorage({
+  azureProxy: "your-azure-endpoint-that-manages-your-api"
+  azureEndpoint: "your-azure-endpoint",
+  azureApiKey: "your-azure-api-key",
+  openAIEndpoint: "https://api.openai.com/v1/embeddings",
+  openAIApiKey: "your-openai-api-key" 
+  });
 
 // Add a text document to the store
 await vectorStore.addText("The quick brown fox jumps over the lazy dog.", {

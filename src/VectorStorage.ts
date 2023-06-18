@@ -1,6 +1,7 @@
 import { ICreateEmbeddingResponse } from './types/ICreateEmbeddingResponse';
 import { IDBPDatabase, openDB } from 'idb';
 import { IVSDocument, IVSSimilaritySearchItem } from './types/IVSDocument';
+import { IVSFilterOptions } from './types/IVSFilterOptions';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
 import { constants } from './common/constants';
@@ -12,22 +13,30 @@ export class VectorStorage<T> {
   private readonly maxSizeInMB: number;
   private readonly debounceTime: number;
   private readonly openaiModel: string;
+  private readonly openaiEndpoint?: string;
   private readonly openaiApiKey?: string;
+  private readonly azureEndpoint?: string;
+  private readonly azureApiKey?: string;
+  private readonly azureProxy?: string;
   private readonly embedTextsFn: (texts: string[]) => Promise<number[][]>;
-
+  
   constructor(options: IVSOptions = {}) {
     this.maxSizeInMB = options.maxSizeInMB ?? constants.DEFAULT_MAX_SIZE_IN_MB;
     this.debounceTime = options.debounceTime ?? constants.DEFAULT_DEBOUNCE_TIME;
     this.openaiModel = options.openaiModel ?? constants.DEFAULT_OPENAI_MODEL;
     this.embedTextsFn = options.embedTextsFn ?? this.embedTexts; // Use the custom function if provided, else use the default one
+    this.openaiEndpoint = options.openAIEndpoint;
     this.openaiApiKey = options.openAIApiKey;
-    if (!this.openaiApiKey && !options.embedTextsFn) {
-      console.error('VectorStorage: pass as an option either an OpenAI API key or a custom embedTextsFn function.');
+    this.azureEndpoint = options.azureEndpoint;
+    this.azureApiKey = options.azureApiKey;
+    this.azureProxy = options.azureProxy;
+    if (!this.azureProxy && !this.azureApiKey && !this.openaiApiKey && !options.embedTextsFn) {
+      console.error('VectorStorage: pass as an option either an api key or a custom embedTextsFn function.');
     } else {
       this.loadFromIndexDbStorage();
     }
   }
-
+  
   public async addText(text: string, metadata: T): Promise<IVSDocument<T>> {
     // Create a document from the text and metadata
     const doc: IVSDocument<T> = {
@@ -40,7 +49,7 @@ export class VectorStorage<T> {
     const docs = await this.addDocuments([doc]);
     return docs[0];
   }
-
+  
   public async addTexts(texts: string[], metadatas: T[]): Promise<Array<IVSDocument<T>>> {
     if (texts.length !== metadatas.length) {
       throw new Error('The lengths of texts and metadata arrays must match.');
@@ -54,7 +63,7 @@ export class VectorStorage<T> {
     }));
     return await this.addDocuments(docs);
   }
-
+  
   public async similaritySearch(params: IVSSimilaritySearchParams): Promise<{
     similarItems: Array<IVSSimilaritySearchItem<T>>;
     query: { text: string; embedding: number[] };
@@ -83,6 +92,19 @@ export class VectorStorage<T> {
     };
   }
 
+  public async clearAll(): Promise<void> {
+    while (this.documents.length > 0) {
+      this.documents.shift();
+    }
+    await this.saveToIndexDbStorage();
+  }
+
+  public async retainMatching(filterOptions: IVSFilterOptions): Promise<void> {
+    const filteredDocuments = filterDocuments(this.documents, filterOptions);
+    this.documents = filteredDocuments;
+    await this.saveToIndexDbStorage();
+  }
+  
   private async initDB(): Promise<IDBPDatabase<any>> {
     return await openDB<any>('VectorStorageDatabase', undefined, {
       upgrade(db) {
@@ -99,7 +121,7 @@ export class VectorStorage<T> {
       },
     });
   }
-
+  
   private async addDocuments(documents: Array<IVSDocument<T>>): Promise<Array<IVSDocument<T>>> {
     // filter out already existing documents
     const newDocuments = documents.filter((doc) => !this.documents.some((d) => d.text === doc.text));
@@ -120,37 +142,63 @@ export class VectorStorage<T> {
     await this.saveToIndexDbStorage();
     return newDocuments;
   }
-
+  
   private async embedTexts(texts: string[]): Promise<number[][]> {
-    const response = await fetch(constants.OPENAI_API_URL, {
-      body: JSON.stringify({
-        input: texts,
-        model: this.openaiModel,
-      }),
-      headers: {
-        Authorization: `Bearer ${this.openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-    });
-
+    let response;
+    if (this.azureProxy) {
+      response = await fetch(this.azureProxy, {
+        body: JSON.stringify({
+          model: this.openaiModel,
+          texts,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      });
+    } else if (this.azureEndpoint && this.azureApiKey) {
+      response = await fetch(this.azureEndpoint, {
+        body: JSON.stringify({
+          input: texts,
+          model: this.openaiModel,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': this.azureApiKey,
+        },
+        method: 'POST',
+      });
+    } else {
+      response = await fetch(this.openaiEndpoint ?? constants.OPENAI_API_URL, {
+        body: JSON.stringify({
+          input: texts,
+          model: this.openaiModel,
+        }),
+        headers: {
+          Authorization: `Bearer ${this.openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      });
+    }
+    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
+    
     const responseData = (await response.json()) as ICreateEmbeddingResponse;
     return responseData.data.map((data) => data.embedding);
   }
-
+  
   private async embedText(query: string): Promise<number[]> {
     return (await this.embedTextsFn([query]))[0];
   }
-
+  
   private calculateMagnitude(embedding: number[]): number {
     const queryMagnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
     return queryMagnitude;
   }
-
+  
   private calculateSimilarityScores(filteredDocuments: Array<IVSDocument<T>>, queryVector: number[], queryMagnitude: number): Array<[IVSDocument<T>, number]> {
     return filteredDocuments.map((doc) => {
       const dotProduct = doc.vector!.reduce((sum, val, i) => sum + val * queryVector[i], 0);
@@ -159,13 +207,13 @@ export class VectorStorage<T> {
       return [doc, score];
     });
   }
-
+  
   private updateHitCounters(results: Array<IVSDocument<T>>): void {
     results.forEach((doc) => {
       doc.hits = (doc.hits ?? 0) + 1; // Update hit counter
     });
   }
-
+  
   private async loadFromIndexDbStorage(): Promise<void> {
     if (!this.db) {
       this.db = await this.initDB();
@@ -173,7 +221,7 @@ export class VectorStorage<T> {
     this.documents = await this.db.getAll('documents');
     this.removeDocsLRU();
   }
-
+  
   private async saveToIndexDbStorage(): Promise<void> {
     if (!this.db) {
       this.db = await this.initDB();
@@ -190,12 +238,12 @@ export class VectorStorage<T> {
       console.error('Failed to save to IndexedDB:', error.message);
     }
   }
-
+  
   private removeDocsLRU(): void {
     if (getObjectSizeInMB(this.documents) > this.maxSizeInMB) {
       // Sort documents by hit counter (ascending) and then by timestamp (ascending)
       this.documents.sort((a, b) => (a.hits ?? 0) - (b.hits ?? 0) || a.timestamp - b.timestamp);
-
+      
       // Remove documents until the size is below the limit
       while (getObjectSizeInMB(this.documents) > this.maxSizeInMB) {
         this.documents.shift();
