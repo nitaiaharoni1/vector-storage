@@ -1,6 +1,6 @@
 {
   "name": "react-embeddings-search",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A lightweight and efficient vector database for storing and searching text embeddings in the browser's local storage. The package uses OpenAI's API or Transformer.js models to generate embeddings for text documents and provides functionality for similarity search, filtering, and automatic management of local storage space. It is designed for use cases where client-side storage and retrieval of text embeddings are needed.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
