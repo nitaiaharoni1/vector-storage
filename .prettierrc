@@ -1,0 +1,16 @@
+{
+  "prettier/prettier": [
+    "error",
+    {
+      "singleQuote": true,
+      "printWidth": 180,
+      "trailingComma": "all",
+      "bracketSpacing": true,
+      "bracketSameLine": true,
+      "quoteProps": "as-needed",
+      "jsxSingleQuote": true,
+      "jsxBracketSameLine": false,
+      "jsxBracketSpacing": true
+    }
+  ]
+}
