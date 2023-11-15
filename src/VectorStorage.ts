@@ -3,6 +3,7 @@ import { IDBPDatabase, openDB } from 'idb';
 import { IVSDocument, IVSSimilaritySearchItem } from './types/IVSDocument';
 import { IVSOptions } from './types/IVSOptions';
 import { IVSSimilaritySearchParams } from './types/IVSSimilaritySearchParams';
+import { Pipeline, env, pipeline } from '@xenova/transformers';
 import { constants } from './common/constants';
 import { filterDocuments, getObjectSizeInMB } from './common/helpers';
 
@@ -11,18 +12,22 @@ export class VectorStorage<T> {
   private documents: Array<IVSDocument<T>> = [];
   private readonly maxSizeInMB: number;
   private readonly debounceTime: number;
-  private readonly openaiModel: string;
+  private readonly openaiModel?: string;
   private readonly openaiApiKey?: string;
+  private readonly transfomersModel?: string;
+  private transformersPipeline?: Pipeline;
   private readonly embedTextsFn: (texts: string[]) => Promise<number[][]>;
 
   constructor(options: IVSOptions = {}) {
     this.maxSizeInMB = options.maxSizeInMB ?? constants.DEFAULT_MAX_SIZE_IN_MB;
     this.debounceTime = options.debounceTime ?? constants.DEFAULT_DEBOUNCE_TIME;
-    this.openaiModel = options.openaiModel ?? constants.DEFAULT_OPENAI_MODEL;
+    this.openaiModel = options.openaiModel;
     this.embedTextsFn = options.embedTextsFn ?? this.embedTexts; // Use the custom function if provided, else use the default one
     this.openaiApiKey = options.openAIApiKey;
-    if (!this.openaiApiKey && !options.embedTextsFn) {
-      console.error('VectorStorage: pass as an option either an OpenAI API key or a custom embedTextsFn function.');
+    this.transfomersModel = options.transfomersModel;
+
+    if (!this.openaiApiKey && !options.embedTextsFn && !options.transfomersModel) {
+      console.error('VectorStorage: pass as an option either an OpenAI API key, a custom embedTextsFn function, or a Transformer.js model.');
     } else {
       this.loadFromIndexDbStorage();
     }
@@ -100,6 +105,11 @@ export class VectorStorage<T> {
     });
   }
 
+  private async loadTransformersModel(): Promise<Pipeline> {
+    env.allowLocalModels = false;
+    return await pipeline('feature-extraction', this.transfomersModel);
+  }
+
   private async addDocuments(documents: Array<IVSDocument<T>>): Promise<Array<IVSDocument<T>>> {
     // filter out already existing documents
     const newDocuments = documents.filter((doc) => !this.documents.some((d) => d.text === doc.text));
@@ -122,6 +132,29 @@ export class VectorStorage<T> {
   }
 
   private async embedTexts(texts: string[]): Promise<number[][]> {
+    if (this.transfomersModel) {
+      return await this.embedTextsTransformers(texts);
+    }
+    return await this.embedTextsOpenAI(texts);
+  }
+
+  private async embedTextsTransformers(texts: string[]): Promise<number[][]> {
+    if (!this.transformersPipeline) {
+      this.transformersPipeline = await this.loadTransformersModel();
+    }
+    const embeddings: number[][] = [];
+    for (const text of texts) {
+      // eslint-disable-next-line no-await-in-loop
+      const embedding = await this.transformersPipeline(text, {
+        normalize: true,
+        pooling: 'mean',
+      });
+      embeddings.push(embedding.data);
+    }
+    return embeddings;
+  }
+
+  private async embedTextsOpenAI(texts: string[]): Promise<number[][]> {
     const response = await fetch(constants.OPENAI_API_URL, {
       body: JSON.stringify({
         input: texts,

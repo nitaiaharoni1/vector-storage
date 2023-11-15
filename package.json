@@ -23,6 +23,7 @@
     "search",
     "similarity",
     "OpenAI",
+    "transformers",
     "API"
   ],
   "scripts": {
@@ -34,6 +35,7 @@
   "author": "Nitai Aharoni",
   "license": "MIT",
   "dependencies": {
+    "@xenova/transformers": "^2.8.0",
     "dexie": "^3.2.3",
     "idb": "^7.1.1"
   },
