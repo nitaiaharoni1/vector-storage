@@ -24,7 +24,7 @@ function matchesCriteria(document: IVSDocument<any>, criteria: IVSFilterCriteria
   }
   if (criteria.text) {
     const texts = Array.isArray(criteria.text) ? criteria.text : [criteria.text];
-    if (!texts.includes(document.text)) {
+    if (!texts.some(word => document.text.includes(word))) {
       return false;
     }
   }
